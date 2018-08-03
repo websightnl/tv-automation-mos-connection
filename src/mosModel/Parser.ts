@@ -31,35 +31,65 @@ function isEmpty (obj: any) {
 		return !obj
 	}
 }
+/**
+ * Get property in xml tree
+ * @param xml
+ * @param path string
+ */
+function X (xml: any, path: string): any {
+
+	if (!path) return xml
+
+	let paths = path.split('.')
+	let prop0 = paths[0]
+	let prop1 = paths.slice(1).join('.')
+
+	if (typeof xml === 'object') {
+		if (xml.elements) {
+			for (let key in xml.elements) {
+				let el = xml.elements[key]
+				if (el.$name === prop0) {
+					if (el.text && !prop1) return el.text
+					return X(el, prop1)
+				}
+			}
+		}
+	} else {
+		return X(xml[prop0], prop1)
+	}
+	return null
+}
 export namespace Parser {
 
 	export function xml2ROBase (xml: any): IMOSRunningOrderBase {
 		let ro: IMOSRunningOrderBase = {
-			ID: new MosString128(xml.roID),
-			Slug: new MosString128(xml.roSlug)
+			ID: new MosString128(X(xml,'roID')),
+			Slug: new MosString128(X(xml,'roSlug'))
 		}
 
-		if (xml.hasOwnProperty('roEdStart') && !isEmpty(xml.roEdStart)) 	ro.EditorialStart = new MosTime(xml.roEdStart)
-		if (xml.hasOwnProperty('roEdDur') 	&& !isEmpty(xml.roEdDur)) 		ro.EditorialDuration = new MosDuration(xml.roEdDur)
-		if (xml.hasOwnProperty('roChannel') && !isEmpty(xml.roChannel)) 	ro.DefaultChannel = new MosString128(xml.roChannel)
-		if (xml.hasOwnProperty('roTrigger') && !isEmpty(xml.roTrigger)) 	ro.Trigger = new MosString128(xml.roTrigger)
-		if (xml.hasOwnProperty('macroIn') 	&& !isEmpty(xml.macroIn)) 		ro.MacroIn = new MosString128(xml.macroIn)
-		if (xml.hasOwnProperty('macroOut') 	&& !isEmpty(xml.macroOut))		ro.MacroOut = new MosString128(xml.macroOut)
-		if (xml.hasOwnProperty('mosExternalMetadata') && !isEmpty(xml.mosExternalMetadata)) {
+		if (X(xml,'roEdStart') != null) 	ro.EditorialStart = new MosTime(X(xml,'roEdStart'))
+		if (X(xml,'roEdDur') != null) 		ro.EditorialDuration = new MosDuration(X(xml,'roEdDur'))
+		if (X(xml,'roChannel') != null) 	ro.DefaultChannel = new MosString128(X(xml,'roChannel'))
+		if (X(xml,'roTrigger') != null) 	ro.Trigger = new MosString128(X(xml,'roTrigger'))
+		if (X(xml,'macroIn') != null) 		ro.MacroIn = new MosString128(X(xml,'macroIn'))
+		if (X(xml,'macroOut') != null)		ro.MacroOut = new MosString128(X(xml,'macroOut'))
+		if (X(xml,'mosExternalMetadata') !== null) {
 			// TODO: Handle an array of mosExternalMetadata
 			let meta: IMOSExternalMetaData = {
-				MosSchema: xml.mosExternalMetadata.mosSchema,
-				MosPayload: xml.mosExternalMetadata.mosPayload
+				MosSchema: X(xml,'mosExternalMetadata.mosSchema'),
+				MosPayload: X(xml,'mosExternalMetadata.mosPayload')
 			}
-			if (xml.mosExternalMetadata.hasOwnProperty('mosScope')) meta.MosScope = xml.mosExternalMetadata.mosScope
+			if (X(xml,'mosExternalMetadata.mosScope')) meta.MosScope = X(xml,'mosExternalMetadata.mosScope')
 			ro.MosExternalMetaData = [meta]
 		}
 		return ro
 	}
 	export function xml2RO (xml: any): IMOSRunningOrder {
-		let stories: Array<IMOSROStory> = xml2Stories(xml.story)
+		console.log('xml2RO', xml)
+		let stories: Array<IMOSROStory> = xml2Stories(X(xml,'story'))
 		let ro: IMOSRunningOrder = xml2ROBase(xml) as IMOSRunningOrder
 		ro.Stories = stories
+		console.log('ro', ro)
 		return ro
 	}
 	// export function ro2xml (ro: IMOSRunningOrder): XMLBuilder.XMLElementOrXMLNode {
@@ -158,9 +188,6 @@ export namespace Parser {
 		if (xml.hasOwnProperty('itemUserTimingDur')) item.UserTimingDuration = xml.itemUserTimingDur
 		if (xml.hasOwnProperty('itemTrigger')) item.Trigger = xml.itemTrigger
 		if (xml.hasOwnProperty('mosExternalMetadata')) item.MosExternalMetaData = xml2MetaData(xml.mosExternalMetadata)
-		if (xml.hasOwnProperty('mosAbstract')) item.mosAbstract = xml.mosAbstract + ''
-		if (xml.hasOwnProperty('objSlug')) item.ObjectSlug = new MosString128(xml.objSlug)
-		if (xml.hasOwnProperty('itemChannel')) item.Channel = new MosString128(xml.itemChannel)
 
 		if (xml.hasOwnProperty('mosObj')) {
 			// Note: the <mosObj> is sent in roStorySend
@@ -198,7 +225,7 @@ export namespace Parser {
 			if (type && Object.keys(xmlPath.o).length > 0) {
 				paths.push({
 					Type: type,
-					Description: xmlPath.o.techDescription || xmlPath.o.attributes.techDescription,
+					Description: (xmlPath.o||{}).techDescription || (xmlPath.o.attributes||{}).techDescription,
 					Target: xmlPath.o.text || xmlPath.o.$t
 				})
 			}
@@ -257,21 +284,6 @@ export namespace Parser {
 		}
 		return xmlItem
 	}
-	function fixPayload (obj: any): any {
-		if (typeof obj === 'object') {
-			for (let key in obj) {
-				let o = obj[key]
-				if (typeof o === 'object') {
-					if (isEmpty(o)) {
-						obj[key] = ''
-					} else {
-						fixPayload(o)
-					}
-				}
-			}
-		}
-		return obj
-	}
 	export function xml2MetaData (xml: any): Array<IMOSExternalMetaData> {
 		if (!xml) return []
 		let xmlMetadata: Array<any> = xml
@@ -280,7 +292,7 @@ export namespace Parser {
 			let md: IMOSExternalMetaData = {
 				MosScope: (xmlmd.hasOwnProperty('mosScope') ? xmlmd.mosScope : null),
 				MosSchema: xmlmd.mosSchema + '',
-				MosPayload: fixPayload(xmlmd.mosPayload)
+				MosPayload: xmlmd.mosPayload
 			}
 			return md
 		})
@@ -386,7 +398,6 @@ export namespace Parser {
 			Description: xml.description
 		}
 		if (xml.hasOwnProperty('mosExternalMetadata')) mosObj.MosExternalMetaData = xml2MetaData(xml.mosExternalMetadata)
-		if (xml.hasOwnProperty('mosItemEditorProgID')) mosObj.MosItemEditorProgID = new MosString128(xml.mosItemEditorProgID)
 		return mosObj
 	}
 	export function mosObj2xml (obj: IMOSObject): XMLBuilder.XMLElementOrXMLNode {
@@ -444,17 +455,34 @@ export namespace Parser {
 		})
 		console.log('xml2Body', body)
 		*/
+
+
 		if (xml.elements && Array.isArray(xml.elements)) {
 			for (const item of xml.elements) {
-				let bodyItem: IMOSROFullStoryBodyItem = {
-					Type: item.$name || item.$type,
-					Content: item
+
+				if (item.name === 'storyItem') {
+					let bodyItem: IMOSROFullStoryBodyItem = {
+						Type: 'storyItem',
+						Content: xml2Item(item)
+					}
+					body.push(bodyItem)
+				} else {
+					let content
+					console.log('item.type', item.type, item)
+					if (item.type === 'text') {
+						content = item.text
+					} else {
+						// fallback, tmp
+						content = item
+					}
+					let bodyItem: IMOSROFullStoryBodyItem = {
+						Type: item.name,
+						Content: content
+					}
+					body.push(bodyItem)
 				}
-				if (item.$name === 'storyItem') {
-					bodyItem.Content = xml2Item(item)
-				}
-				body.push(bodyItem)
 			}
+			console.log('body', body)
 		}
 		// Temporary implementation:
 		if (xml.storyItem) {
