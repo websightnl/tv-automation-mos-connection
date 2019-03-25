@@ -3,7 +3,7 @@ import { MosTime } from './dataTypes/mosTime';
 import { MosDuration } from './dataTypes/mosDuration';
 import { MosString128 } from './dataTypes/mosString128';
 import { IMOSExternalMetaData } from './dataTypes/mosExternalMetaData';
-import { IMOSListMachInfo } from './mosModel';
+import { IMOSListMachInfo, MOSAck, MosItemReplaceOptions } from './mosModel';
 import { MosDevice } from './MosDevice';
 export interface IMosConnection {
     readonly isListening: boolean;
@@ -52,6 +52,15 @@ export interface IMOSDevice {
     onRODeleteItems: (cb: (Action: IMOSStoryAction, Items: Array<MosString128>) => Promise<IMOSROAck>) => void;
     onROSwapStories: (cb: (Action: IMOSROAction, StoryID0: MosString128, StoryID1: MosString128) => Promise<IMOSROAck>) => void;
     onROSwapItems: (cb: (Action: IMOSStoryAction, ItemID0: MosString128, ItemID1: MosString128) => Promise<IMOSROAck>) => void;
+    onMosObjCreate: (cb: (object: IMOSObject) => Promise<IMOSAck>) => void;
+    mosObjCreate: (object: IMOSObject) => Promise<MOSAck>;
+    onMosItemReplace: (cb: (roID: MosString128, storyID: MosString128, item: IMOSItem) => Promise<IMOSROAck>) => void;
+    mosItemReplace: (options: MosItemReplaceOptions) => Promise<IMOSROAck>;
+    onMosReqSearchableSchema: (cb: (username: string) => Promise<IMOSSearchableSchema>) => void;
+    mosRequestSearchableSchema: (username: string) => Promise<IMOSSearchableSchema>;
+    onMosReqObjectList: (cb: (objList: IMosRequestObjectList) => Promise<IMosObjectList>) => void;
+    mosRequestObjectList: (reqObjList: IMosRequestObjectList) => Promise<IMosObjectList>;
+    onMosReqObjectAction: (cb: (action: string, obj: IMOSObject) => Promise<IMOSAck>) => void;
     getAllRunningOrders: () => Promise<Array<IMOSRunningOrderBase>>;
     onROStory: (cb: (story: IMOSROFullStory) => Promise<IMOSROAck>) => void;
 }
