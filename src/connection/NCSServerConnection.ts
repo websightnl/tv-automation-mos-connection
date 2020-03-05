@@ -151,6 +151,14 @@ export class NCSServerConnection extends EventEmitter implements INCSServerConne
 		})
 		return connected
 	}
+	getFullConnectionStatus (): string {
+		const status: string[] = []
+		Object.keys(this._clients).forEach(key => {
+			let client = this._clients[key]
+			status.push((`${key} (${client.clientDescription}): useHeartbeats: ${client.useHeartbeats}, connected: ${client.heartbeatConnected}`))
+		})
+		return status.join(', ')
+	}
 
 	private _getClients (clientDescription: string): MosSocketClient[] {
 		let clients: MosSocketClient[] = []

@@ -714,9 +714,9 @@ export class MosDevice implements IMOSDevice {
 		// TODO: Implement this
 		return {
 			PrimaryConnected: (this._primaryConnection ? this._primaryConnection.connected : false),
-			PrimaryStatus: '',
+			PrimaryStatus: (this._primaryConnection ? this._primaryConnection.getFullConnectionStatus() : 'No primary connection'),
 			SecondaryConnected: (this._secondaryConnection ? this._secondaryConnection.connected : false),
-			SecondaryStatus: ''
+			SecondaryStatus: (this._secondaryConnection ? this._secondaryConnection.getFullConnectionStatus() : 'No secondary connection')
 		}
 	}
 
@@ -1022,6 +1022,7 @@ export class MosDevice implements IMOSDevice {
 		if (this._currentConnection) {
 			if (this._debug) console.log('exec command', message)
 			if (!this._currentConnection.connected) {
+				if (this._debug) console.log(this._currentConnection.getFullConnectionStatus())
 				return this.switchConnections(message)
 			}
 			return this._currentConnection.executeCommand(message).then((res) => {
