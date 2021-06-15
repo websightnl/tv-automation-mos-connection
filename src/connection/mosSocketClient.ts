@@ -391,8 +391,11 @@ export class MosSocketClient extends EventEmitter {
 					}
 					clearTimeout(this._commandTimeoutTimer)
 				} else {
-					// error message?
-					if (parsedData.mos.mosAck && parsedData.mos.mosAck.status === 'NACK') {
+					// heartbeat
+					if (parsedData.mos.heartbeat && this._sentMessage !== null && this._sentMessage.msg instanceof HeartBeat) {
+						this._sendReply(this._sentMessage.msg.messageID, null, parsedData)
+					} else if (parsedData.mos.mosAck && parsedData.mos.mosAck.status === 'NACK') {
+						// error message?
 						if (this._sentMessage && parsedData.mos.mosAck.statusDescription === 'Buddy server cannot respond because main server is available') {
 							this._sendReply(this._sentMessage.msg.messageID, 'Main server available', parsedData)
 						} else {
