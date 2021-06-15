@@ -12,7 +12,7 @@ export function pad (n: string, width: number, z?: string): string {
 }
 
 export function xml2js (messageString: string): object {
-	let object = xmlParser(messageString, { compact: false, trim: true, nativeType: true })
+	let object = xmlParser(messageString, { compact: false, trim: false, nativeType: true })
 	// common tags we typically want to know the order of the contents of:
 	const orderedTags = new Set([ 'storyBody', 'mosAbstract', 'description', 'p', 'em', 'span', 'h1', 'h2', 'i', 'b' ])
 
