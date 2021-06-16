@@ -428,6 +428,19 @@ export class MosDevice implements IMOSDevice {
 			return new ROAck(resp)
 
 		} else if (
+			data.roStoryInsert &&
+			typeof this._callbackOnROInsertStories === 'function'
+		) {
+			const action: IMOSStoryAction = {
+				RunningOrderID: new MosString128(data.roStoryInsert.roID),
+				StoryID: new MosString128(data.roStoryInsert.storyID)
+			}
+			const stories: Array<IMOSROStory> = Parser.xml2Stories([data.roStoryInsert.story])
+			const resp = await this._callbackOnROInsertStories(action, stories)
+
+			return new ROAck(resp)
+
+		} else if (
 			data.roElementAction &&
 			data.roElementAction.operation === 'INSERT' &&
 			(data.roElementAction.element_source || {}).item &&
@@ -486,6 +499,16 @@ export class MosDevice implements IMOSDevice {
 			const resp = await this._callbackOnROMoveStories(action, storyIDs)
 			return new ROAck(resp)
 
+		} else if (data.roStoryMove &&
+			typeof this._callbackOnRODeleteStories === 'function'
+		) {
+			const stories: Array<MosString128> = Parser.xml2IDs(data.roStoryMove.storyID)
+
+			const resp = await this._callbackOnRODeleteStories({
+				RunningOrderID: new MosString128(data.roStoryMove.roID)
+			}, stories)
+			return new ROAck(resp)
+
 		} else if (data.roElementAction &&
 			data.roElementAction.operation === 'MOVE' &&
 			(data.roElementAction.element_source || {}).itemID &&
@@ -510,6 +533,16 @@ export class MosDevice implements IMOSDevice {
 			const resp = await this._callbackOnRODeleteStories({
 				RunningOrderID: new MosString128(data.roElementAction.roID)
 			 }, stories)
+			return new ROAck(resp)
+
+		} else if (data.roStoryDelete &&
+			typeof this._callbackOnRODeleteStories === 'function'
+		) {
+			const stories: Array<MosString128> = Parser.xml2IDs(data.roStoryDelete.storyID)
+
+			const resp = await this._callbackOnRODeleteStories({
+				RunningOrderID: new MosString128(data.roStoryDelete.roID)
+			}, stories)
 			return new ROAck(resp)
 
 		} else if (data.roElementAction &&
