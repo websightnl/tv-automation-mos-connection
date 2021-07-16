@@ -1,0 +1,19 @@
+image: node:latest
+
+before_script:
+  - yarn
+
+test:lint:
+  script:
+    - yarn test
+
+publish:
+  stage: deploy
+  only:
+    - tags
+    - triggers
+  script:
+    - yarn build
+    - npm install -g npm-cli-login
+    - npm-cli-login
+    - npm publish --registry ${NPM_REGISTRY}
