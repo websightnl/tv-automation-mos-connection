@@ -428,6 +428,19 @@ export class MosDevice implements IMOSDevice {
 			return new ROAck(resp)
 
 		} else if (
+			data.roStoryAppend &&
+			typeof this._callbackOnROInsertStories === 'function'
+		) {
+			const action: IMOSStoryAction = {
+				RunningOrderID: new MosString128(data.roStoryAppend.roID),
+				StoryID: new MosString128('')
+			}
+			const stories: Array<IMOSROStory> = Parser.xml2Stories([data.roStoryAppend.story])
+			const resp = await this._callbackOnROInsertStories(action, stories)
+
+			return new ROAck(resp)
+
+		} else if (
 			data.roStoryInsert &&
 			typeof this._callbackOnROInsertStories === 'function'
 		) {
@@ -467,6 +480,18 @@ export class MosDevice implements IMOSDevice {
 				StoryID: new MosString128((data.roElementAction.element_target || {}).storyID)
 			}
 			const stories: Array<IMOSROStory> = Parser.xml2Stories([data.roElementAction.element_source.story])
+			const resp = await this._callbackOnROReplaceStories(action, stories)
+			return new ROAck(resp)
+
+		} else if (
+			data.roStoryReplace &&
+			typeof this._callbackOnROReplaceStories === 'function'
+		) {
+			const action: IMOSStoryAction = {
+				RunningOrderID: new MosString128(data.roStoryReplace.roID),
+				StoryID: new MosString128(data.roStoryReplace.storyID)
+			}
+			const stories: Array<IMOSROStory> = Parser.xml2Stories([data.roStoryReplace.story])
 			const resp = await this._callbackOnROReplaceStories(action, stories)
 			return new ROAck(resp)
 
