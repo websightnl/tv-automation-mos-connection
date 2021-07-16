@@ -1,4 +1,4 @@
-import { xml2js as xmlParser } from 'xml-js'
+import {Element, xml2js as xmlParser} from 'xml-js'
 import * as XMLBuilder from 'xmlbuilder'
 import { MosString128 } from '../dataTypes/mosString128'
 import { MosTime } from '../dataTypes/mosTime'
@@ -11,10 +11,20 @@ export function pad (n: string, width: number, z?: string): string {
 	return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n
 }
 
+// common tags we typically want to know the order of the contents of:
+const orderedTags = new Set([ 'storyBody', 'mosAbstract', 'description', 'p', 'em', 'span', 'h1', 'h2', 'i', 'b', 'u' ])
+
+const conditionalTrimText = (value: any, parentElement: Element) =>
+	(typeof value === 'string' && parentElement.name && !orderedTags.has(parentElement.name)) ? value.trim() : value
+
 export function xml2js (messageString: string): object {
-	let object = xmlParser(messageString, { compact: false, trim: false, nativeType: true })
-	// common tags we typically want to know the order of the contents of:
-	const orderedTags = new Set([ 'storyBody', 'mosAbstract', 'description', 'p', 'em', 'span', 'h1', 'h2', 'i', 'b' ])
+	// @ts-ignore
+	let object = xmlParser(messageString, {
+		compact: false,
+		trim: false,
+		nativeType: true,
+		textFn: conditionalTrimText
+	})
 
 	/**
 	 * Doing a post-order tree traversal we try to make the objectified tree as compact as possible.
